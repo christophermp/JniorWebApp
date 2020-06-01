@@ -1,59 +1,104 @@
 ﻿
-<table class="table table-striped">
-    <thead class="thead-dark">
-        <tr>
-            <th>IN 1</th>
-            <th>IN 2</th>
-            <th>IN 3</th>
-            <th>IN 4</th>
-            <th>Out 1</th>
-            <th>Out 2</th>
-            <th>Out 3</th>
-            <th>Out 4</th>
-            <th>Out 5</th>
-            <th>Out 6</th>
-            <th>Out 7</th>
-            <th>Out 8</th>
-            <th>Out 9</th>
-            <th>Out 10</th>
-            <th>Out 11</th>
-            <th>Out 12</th>
-            <th>Out 13</th>
-            <th>Out 14</th>
-            <th>Out 15</th>
-            <th>Out 16</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>@jniorPort.DIN1</td>
-            <td>@jniorPort.DIN2</td>
-            <td>@jniorPort.DIN3</td>
-            <td>@jniorPort.DIN4</td>
-            <td>@jniorPort.ROUT1</td>
-            <td>@jniorPort.ROUT2</td>
-            <td>@jniorPort.ROUT3</td>
-            <td>@jniorPort.ROUT4</td>
-            <td>@jniorPort.ROUT5</td>
-            <td>@jniorPort.ROUT6</td>
-            <td>@jniorPort.ROUT7</td>
-            <td>@jniorPort.ROUT8</td>
-            <td>@jniorPort.ROUT9</td>
-            <td>@jniorPort.ROUT10</td>
-            <td>@jniorPort.ROUT11</td>
-            <td>@jniorPort.ROUT12</td>
-            <td>@jniorPort.ROUT13</td>
-            <td>@jniorPort.ROUT14</td>
-            <td>@jniorPort.ROUT15</td>
-            <td>@jniorPort.ROUT16</td>
-        </tr>
-    </tbody>
-</table>
+@inject IHttpClientFactory _clientFactory
+
+
+<p>Temprature: @Math.Round(jniorTemp.Celsius, 1)</p>
+
+@if (string.IsNullOrWhiteSpace(errorString) == false)
+{
+    <div class="h2">@errorString</div>
+}
+else if (jniorData is null)
+{
+    <div class="h4">Loading....</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Hostname</th>
+                <th>Cinema Version</th>
+                <th>Ip Address</th>
+                <th>Uptime Seconds</th>
+                <th>Uptime String</th>
+                <th>S/N</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@jniorData.Hostname</td>
+                <td>@jniorData.CinemaVersion</td>
+                <td>@jniorData.IpAddress</td>
+                <td>@jniorData.UptimeSeconds</td>
+                <td>@jniorData.UptimeString</td>
+                <td>@jniorData.SerialNumber</td>
+            </tr>
+        </tbody>
+    </table>
+    <table class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>IN 1</th>
+                <th>IN 2</th>
+                <th>IN 3</th>
+                <th>IN 4</th>
+                <th>Out 1</th>
+                <th>Out 2</th>
+                <th>Out 3</th>
+                <th>Out 4</th>
+                <th>Out 5</th>
+                <th>Out 6</th>
+                <th>Out 7</th>
+                <th>Out 8</th>
+                <th>Out 9</th>
+                <th>Out 10</th>
+                <th>Out 11</th>
+                <th>Out 12</th>
+                <th>Out 13</th>
+                <th>Out 14</th>
+                <th>Out 15</th>
+                <th>Out 16</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@jniorPort.DIN1</td>
+                <td>@jniorPort.DIN2</td>
+                <td>@jniorPort.DIN3</td>
+                <td>@jniorPort.DIN4</td>
+                <td>@jniorPort.ROUT1</td>
+                <td>@jniorPort.ROUT2</td>
+                <td>@jniorPort.ROUT3</td>
+                <td>@jniorPort.ROUT4</td>
+                <td>@jniorPort.ROUT5</td>
+                <td>@jniorPort.ROUT6</td>
+                <td>@jniorPort.ROUT7</td>
+                <td>@jniorPort.ROUT8</td>
+                <td>@jniorPort.ROUT9</td>
+                <td>@jniorPort.ROUT10</td>
+                <td>@jniorPort.ROUT11</td>
+                <td>@jniorPort.ROUT12</td>
+                <td>@jniorPort.ROUT13</td>
+                <td>@jniorPort.ROUT14</td>
+                <td>@jniorPort.ROUT15</td>
+                <td>@jniorPort.ROUT16</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <JniorInputOutputTable></JniorInputOutputTable>
+
+}
 
 @code {
+    JniorDataModel jniorData = new JniorDataModel();
     JniorPortModel jniorPort = new JniorPortModel();
+    JniorTempModel jniorTemp = new JniorTempModel();
     string errorString;
 
+    double number;
+    private Random rnd = new Random();
     private System.Threading.Timer _timer;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -61,9 +106,29 @@
 
     async void ChangeValues()
     {
-        var clientPort = new WebClient();
-        string portData = await clientPort.DownloadStringTaskAsync("http://10.0.0.111:8080/getdevice");
-        jniorPort = JsonConvert.DeserializeObject<JniorPortModel>(portData);
+        try
+        {
+            var clientBase = new WebClient();
+            string data = await clientBase.DownloadStringTaskAsync("http://10.0.0.111:8080/getStatus");
+            jniorData = JsonConvert.DeserializeObject<JniorDataModel>(data);
+
+            var clientPort = new WebClient();
+            string portData = await clientPort.DownloadStringTaskAsync("http://10.0.0.111:8080/getdevice");
+            jniorPort = JsonConvert.DeserializeObject<JniorPortModel>(portData);
+
+            var clientTemp = new WebClient();
+            string tempData = await clientPort.DownloadStringTaskAsync("http://10.0.0.111:8080/getdevice?device=type28_1");
+            jniorTemp = JsonConvert.DeserializeObject<JniorTempModel>(tempData);
+
+
+            // Triggering timer / refresh function
+            _timer = new System.Threading.Timer(DoWork, null, TimeSpan.Zero,
+                TimeSpan.FromSeconds(5));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"There was an error getting our forecast: { ex.Message }");
+        }
     }
     private async void DoWork(object state)
     {
@@ -77,14 +142,37 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var clientPort = new WebClient();
-        string portData = await clientPort.DownloadStringTaskAsync("http://10.0.0.111:8080/getdevice");
-        jniorPort = JsonConvert.DeserializeObject<JniorPortModel>(portData);
+        //string json = new WebClient().DownloadString("http://10.0.0.111:8080/getStatus");
+        //Console.WriteLine(json);
 
-        
-        // Triggering timer / refresh function
-        _timer = new System.Threading.Timer(DoWork, null, TimeSpan.Zero,
-            TimeSpan.FromSeconds(3));
+        //JniorDataModel jnior = JsonConvert.DeserializeObject<JniorDataModel>(json);
+        //Console.WriteLine(jnior.UptimeSeconds);
+
+        try
+        {
+            var clientBase = new WebClient();
+            string data = await clientBase.DownloadStringTaskAsync("http://10.0.0.111:8080/getStatus");
+            jniorData = JsonConvert.DeserializeObject<JniorDataModel>(data);
+
+            var clientPort = new WebClient();
+            string portData = await clientPort.DownloadStringTaskAsync("http://10.0.0.111:8080/getdevice");
+            jniorPort = JsonConvert.DeserializeObject<JniorPortModel>(portData);
+
+            var clientTemp = new WebClient();
+            string tempData = await clientPort.DownloadStringTaskAsync("http://10.0.0.111:8080/getdevice?device=type28_1");
+            jniorTemp = JsonConvert.DeserializeObject<JniorTempModel>(tempData);
+
+
+            // Triggering timer / refresh function
+            _timer = new System.Threading.Timer(DoWork, null, TimeSpan.Zero,
+        TimeSpan.FromSeconds(5));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"There was an error getting our forecast: { ex.Message }");
+        }
+
+
     }
 
 }
