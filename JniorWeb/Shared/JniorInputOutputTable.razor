@@ -1,0 +1,90 @@
+﻿
+<table class="table table-striped">
+    <thead class="thead-dark">
+        <tr>
+            <th>IN 1</th>
+            <th>IN 2</th>
+            <th>IN 3</th>
+            <th>IN 4</th>
+            <th>Out 1</th>
+            <th>Out 2</th>
+            <th>Out 3</th>
+            <th>Out 4</th>
+            <th>Out 5</th>
+            <th>Out 6</th>
+            <th>Out 7</th>
+            <th>Out 8</th>
+            <th>Out 9</th>
+            <th>Out 10</th>
+            <th>Out 11</th>
+            <th>Out 12</th>
+            <th>Out 13</th>
+            <th>Out 14</th>
+            <th>Out 15</th>
+            <th>Out 16</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>@jniorPort.DIN1</td>
+            <td>@jniorPort.DIN2</td>
+            <td>@jniorPort.DIN3</td>
+            <td>@jniorPort.DIN4</td>
+            <td>@jniorPort.ROUT1</td>
+            <td>@jniorPort.ROUT2</td>
+            <td>@jniorPort.ROUT3</td>
+            <td>@jniorPort.ROUT4</td>
+            <td>@jniorPort.ROUT5</td>
+            <td>@jniorPort.ROUT6</td>
+            <td>@jniorPort.ROUT7</td>
+            <td>@jniorPort.ROUT8</td>
+            <td>@jniorPort.ROUT9</td>
+            <td>@jniorPort.ROUT10</td>
+            <td>@jniorPort.ROUT11</td>
+            <td>@jniorPort.ROUT12</td>
+            <td>@jniorPort.ROUT13</td>
+            <td>@jniorPort.ROUT14</td>
+            <td>@jniorPort.ROUT15</td>
+            <td>@jniorPort.ROUT16</td>
+        </tr>
+    </tbody>
+</table>
+
+@code {
+    JniorPortModel jniorPort = new JniorPortModel();
+    string errorString;
+
+    private System.Threading.Timer _timer;
+
+    ///////////////////////////////////////////////////////////////////////////
+    /// PART OF TIMER FUNCTION
+
+    async void ChangeValues()
+    {
+        var clientPort = new WebClient();
+        string portData = await clientPort.DownloadStringTaskAsync("http://10.0.0.111:8080/getdevice");
+        jniorPort = JsonConvert.DeserializeObject<JniorPortModel>(portData);
+    }
+    private async void DoWork(object state)
+    {
+        ChangeValues();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // END OF TIMER FUNCTION
+    ///////////////////////////////////////////////////////////////////////////
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var clientPort = new WebClient();
+        string portData = await clientPort.DownloadStringTaskAsync("http://10.0.0.111:8080/getdevice");
+        jniorPort = JsonConvert.DeserializeObject<JniorPortModel>(portData);
+
+        
+        // Triggering timer / refresh function
+        _timer = new System.Threading.Timer(DoWork, null, TimeSpan.Zero,
+            TimeSpan.FromSeconds(3));
+    }
+
+}
